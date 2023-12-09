@@ -22,12 +22,13 @@ from metrics import *
 # pytorch-lightning
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning import LightningModule, Trainer
-from pytorch_lightning.logging import TestTubeLogger
+from pytorch_lightning.loggers import TestTubeLogger
+from pytorch_lightning.callbacks import EarlyStopping
 
 class NeRFSystem(LightningModule):
     def __init__(self, hparams):
         super(NeRFSystem, self).__init__()
-        self.hparams = hparams
+        self.save_hyperparameters(hparams)
 
         self.loss = loss_dict[hparams.loss_type]()
 
@@ -151,11 +152,19 @@ class NeRFSystem(LightningModule):
 if __name__ == '__main__':
     hparams = get_opts()
     system = NeRFSystem(hparams)
-    checkpoint_callback = ModelCheckpoint(filepath=os.path.join(f'ckpts/{hparams.exp_name}',
-                                                                '{epoch:d}'),
-                                          monitor='val/loss',
-                                          mode='min',
-                                          save_top_k=5,)
+    checkpoint_callback = ModelCheckpoint(
+    dirpath=os.path.join('ckpts', hparams.exp_name),
+    filename='{epoch:d}',
+    monitor='val/loss',
+    mode='min',
+    save_top_k=5,
+    )
+    early_stop_callback = EarlyStopping(
+    monitor='val_loss',  # The metric to monitor
+    patience=3,          # Number of epochs with no improvement after which training will be stopped
+    verbose=True,
+    mode='min'           # Mode for the monitored quantity ('min' for minimization, 'max' for maximization)
+    )
 
     logger = TestTubeLogger(
         save_dir="logs",
@@ -164,17 +173,18 @@ if __name__ == '__main__':
         create_git_tag=False
     )
 
-    trainer = Trainer(max_epochs=hparams.num_epochs,
-                      checkpoint_callback=checkpoint_callback,
-                      resume_from_checkpoint=hparams.ckpt_path,
-                      logger=logger,
-                      early_stop_callback=None,
-                      weights_summary=None,
-                      progress_bar_refresh_rate=1,
-                      gpus=hparams.num_gpus,
-                      distributed_backend='ddp' if hparams.num_gpus>1 else None,
-                      num_sanity_val_steps=1,
-                      benchmark=True,
-                      profiler=hparams.num_gpus==1)
+    trainer = Trainer(
+    max_epochs=hparams.num_epochs,
+    callbacks=[checkpoint_callback, early_stop_callback],  # Add both callbacks here
+    resume_from_checkpoint=hparams.ckpt_path,
+    logger=logger,
+    weights_summary=None,
+    progress_bar_refresh_rate=1,
+    gpus=hparams.num_gpus,
+    distributed_backend='ddp' if hparams.num_gpus > 1 else None,
+    num_sanity_val_steps=1,
+    benchmark=True,
+    profiler=hparams.num_gpus == 1
+    )
 
     trainer.fit(system)

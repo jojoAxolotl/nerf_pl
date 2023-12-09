@@ -4,10 +4,10 @@ def get_opts():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--root_dir', type=str,
-                        default='/home/ubuntu/data/nerf_example_data/nerf_synthetic/lego',
+                        default='dataset',
                         help='root directory of dataset')
-    parser.add_argument('--dataset_name', type=str, default='blender',
-                        choices=['blender', 'llff'],
+    parser.add_argument('--dataset_name', type=str, default='klevr',
+                        choices=['blender', 'llff', 'klevr'],
                         help='which dataset to train/val')
     parser.add_argument('--img_wh', nargs="+", type=int, default=[800, 800],
                         help='resolution (img_w, img_h) of the image')
