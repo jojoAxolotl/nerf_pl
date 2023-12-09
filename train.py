@@ -80,12 +80,24 @@ class NeRFSystem(LightningModule):
             kwargs['val_num'] = self.hparams.num_gpus
         self.train_dataset = dataset(split='train', **kwargs)
         self.val_dataset = dataset(split='val', **kwargs)
-
     def configure_optimizers(self):
         self.optimizer = get_optimizer(self.hparams, self.models)
         scheduler = get_scheduler(self.hparams, self.optimizer)
         
-        return [self.optimizer], [scheduler]
+        lr_scheduler = {
+            'scheduler': scheduler,
+            'interval': 'epoch',  # 或 'step', 根據你的需求
+            # 'frequency': 1,  如果你需要在每個 epoch 或 step 更新，這是默認行為
+            # 'monitor': 'val_loss',  如果你的 scheduler 依賴於某個指標，比如 ReduceLROnPlateau
+        }
+
+        return [self.optimizer], [lr_scheduler]
+
+    # def configure_optimizers(self):
+    #     self.optimizer = get_optimizer(self.hparams, self.models)
+    #     scheduler = get_scheduler(self.hparams, self.optimizer)
+        
+    #     return [self.optimizer], [scheduler]
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset,
@@ -184,7 +196,7 @@ if __name__ == '__main__':
     distributed_backend='ddp' if hparams.num_gpus > 1 else None,
     num_sanity_val_steps=1,
     benchmark=True,
-    profiler=hparams.num_gpus == 1
+    profiler=None
     )
 
     trainer.fit(system)

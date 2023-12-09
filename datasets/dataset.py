@@ -188,7 +188,7 @@ def scale_rays(all_rays_o, all_rays_d, scene_boundaries, img_wh):
 # Nesf Klevr
 
 class KlevrDataset(Dataset):
-    def __init__(self, root_dir, split='train', get_rgb=True) -> None:
+    def __init__(self, root_dir, split='train', get_rgb=True, img_wh=None, white_back=True) -> None:
         # super().__init__()
         '''
         split: train/val/test
@@ -196,6 +196,8 @@ class KlevrDataset(Dataset):
         self.root_dir = root_dir
         self.get_rgb = get_rgb
         self.split = split
+        self.img_wh = img_wh
+        self.white_back = white_back
 
         self.define_transforms()
         self.read_meta()
@@ -227,7 +229,7 @@ class KlevrDataset(Dataset):
             camera_quaternions = np.array(self.meta['camera']['quaternions'])
             for image_id in self.split_ids:
                 if self.get_rgb:
-                    image_path = os.path.join(self.root_dir, f'rgba_{image_id:05d}.png')
+                    image_path = os.path.join(self.root_dir, f'{image_id:05d}.png')
                     img = Image.open(image_path)
                     img = img.resize(self.img_wh, Image.Resampling.LANCZOS)
                     img = self.transform(img) # (4, h, w)
@@ -274,7 +276,7 @@ class KlevrDataset(Dataset):
             image_id = self.split_ids[idx]
 
             if self.get_rgb:
-                img = Image.open(os.path.join(self.root_dir, f'rgba_{image_id:05d}.png'))
+                img = Image.open(os.path.join(self.root_dir, f'{image_id:05d}.png'))
                 img = img.resize(self.img_wh, Image.Resampling.LANCZOS)
                 img = self.transform(img)
                 valid_mask = (img[-1]>0).flatten()
