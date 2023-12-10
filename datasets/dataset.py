@@ -326,6 +326,4 @@ class KlevrDataset(Dataset):
             sample = {'rays': rays.float(),
                       'c2w': c2w}
 
-
         return sample
-

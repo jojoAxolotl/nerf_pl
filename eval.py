@@ -20,16 +20,16 @@ torch.backends.cudnn.benchmark = True
 def get_opts():
     parser = ArgumentParser()
     parser.add_argument('--root_dir', type=str,
-                        default='/home/ubuntu/data/nerf_example_data/nerf_synthetic/lego',
+                        default='dataset',
                         help='root directory of dataset')
-    parser.add_argument('--dataset_name', type=str, default='blender',
-                        choices=['blender', 'llff'],
+    parser.add_argument('--dataset_name', type=str, default='klevr',
+                        choices=['blender', 'llff', 'klevr'],
                         help='which dataset to validate')
     parser.add_argument('--scene_name', type=str, default='test',
                         help='scene name, used as output folder name')
     parser.add_argument('--split', type=str, default='test',
                         help='test or test_train')
-    parser.add_argument('--img_wh', nargs="+", type=int, default=[800, 800],
+    parser.add_argument('--img_wh', nargs="+", type=int, default=[256, 256],
                         help='resolution (img_w, img_h) of the image')
     parser.add_argument('--spheric_poses', default=False, action="store_true",
                         help='whether images are taken in spheric poses (for llff)')
@@ -44,6 +44,7 @@ def get_opts():
                         help='chunk size to split the input to avoid OOM')
 
     parser.add_argument('--ckpt_path', type=str, required=True,
+                        default='ckpts/exp/epoch=12.ckpt',
                         help='pretrained checkpoint path to load')
 
     parser.add_argument('--save_depth', default=False, action="store_true",
@@ -59,7 +60,7 @@ def get_opts():
 def batched_inference(models, embeddings,
                       rays, N_samples, N_importance, use_disp,
                       chunk,
-                      white_back):
+                      white_back = False):
     """Do batched inference on rays using chunk."""
     B = rays.shape[0]
     chunk = 1024*32

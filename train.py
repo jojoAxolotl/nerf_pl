@@ -13,7 +13,7 @@ from models.rendering import render_rays
 # optimizer, scheduler, visualization
 from utils import *
 
-# losses
+# losses MSELoss
 from losses import loss_dict
 
 # metrics
@@ -80,6 +80,7 @@ class NeRFSystem(LightningModule):
             kwargs['val_num'] = self.hparams.num_gpus
         self.train_dataset = dataset(split='train', **kwargs)
         self.val_dataset = dataset(split='val', **kwargs)
+
     def configure_optimizers(self):
         self.optimizer = get_optimizer(self.hparams, self.models)
         scheduler = get_scheduler(self.hparams, self.optimizer)
@@ -90,14 +91,7 @@ class NeRFSystem(LightningModule):
             # 'frequency': 1,  如果你需要在每個 epoch 或 step 更新，這是默認行為
             # 'monitor': 'val_loss',  如果你的 scheduler 依賴於某個指標，比如 ReduceLROnPlateau
         }
-
         return [self.optimizer], [lr_scheduler]
-
-    # def configure_optimizers(self):
-    #     self.optimizer = get_optimizer(self.hparams, self.models)
-    #     scheduler = get_scheduler(self.hparams, self.optimizer)
-        
-    #     return [self.optimizer], [scheduler]
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset,
@@ -117,12 +111,12 @@ class NeRFSystem(LightningModule):
         log = {'lr': get_learning_rate(self.optimizer)}
         rays, rgbs = self.decode_batch(batch)
         results = self(rays)
-        log['train/loss'] = loss = self.loss(results, rgbs)
+        log['train_loss'] = loss = self.loss(results, rgbs)
         typ = 'fine' if 'rgb_fine' in results else 'coarse'
 
         with torch.no_grad():
             psnr_ = psnr(results[f'rgb_{typ}'], rgbs)
-            log['train/psnr'] = psnr_
+            log['train_psnr'] = psnr_
 
         return {'loss': loss,
                 'progress_bar': {'train_psnr': psnr_},
@@ -134,6 +128,7 @@ class NeRFSystem(LightningModule):
         rays = rays.squeeze() # (H*W, 3)
         rgbs = rgbs.squeeze() # (H*W, 3)
         results = self(rays)
+        print(self.loss(results, rgbs))
         log = {'val_loss': self.loss(results, rgbs)}
         typ = 'fine' if 'rgb_fine' in results else 'coarse'
     
@@ -154,28 +149,29 @@ class NeRFSystem(LightningModule):
         mean_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         mean_psnr = torch.stack([x['val_psnr'] for x in outputs]).mean()
 
+        self.log('val_loss', mean_loss)  # 使用 self.log 以確保指標被正確記錄
+
         return {'progress_bar': {'val_loss': mean_loss,
                                  'val_psnr': mean_psnr},
-                'log': {'val/loss': mean_loss,
-                        'val/psnr': mean_psnr}
-               }
-
+                'log': {'val_loss': mean_loss,
+                        'val_psnr': mean_psnr}
+            }
 
 if __name__ == '__main__':
     hparams = get_opts()
     system = NeRFSystem(hparams)
     checkpoint_callback = ModelCheckpoint(
-    dirpath=os.path.join('ckpts', hparams.exp_name),
-    filename='{epoch:d}',
-    monitor='val/loss',
-    mode='min',
-    save_top_k=5,
+        dirpath=os.path.join('ckpts', hparams.exp_name),
+        filename='{epoch:d}',
+        monitor='val_loss',
+        mode='min',
+        save_top_k=5,
     )
     early_stop_callback = EarlyStopping(
-    monitor='val_loss',  # The metric to monitor
-    patience=3,          # Number of epochs with no improvement after which training will be stopped
-    verbose=True,
-    mode='min'           # Mode for the monitored quantity ('min' for minimization, 'max' for maximization)
+        monitor='val_loss',  # The metric to monitor
+        patience=3,          # Number of epochs with no improvement after which training will be stopped
+        verbose=True,
+        mode='min'           # Mode for the monitored quantity ('min' for minimization, 'max' for maximization)
     )
 
     logger = TestTubeLogger(
@@ -186,17 +182,17 @@ if __name__ == '__main__':
     )
 
     trainer = Trainer(
-    max_epochs=hparams.num_epochs,
-    callbacks=[checkpoint_callback, early_stop_callback],  # Add both callbacks here
-    resume_from_checkpoint=hparams.ckpt_path,
-    logger=logger,
-    weights_summary=None,
-    progress_bar_refresh_rate=1,
-    gpus=hparams.num_gpus,
-    distributed_backend='ddp' if hparams.num_gpus > 1 else None,
-    num_sanity_val_steps=1,
-    benchmark=True,
-    profiler=None
+        max_epochs=hparams.num_epochs,
+        callbacks=[checkpoint_callback, early_stop_callback],  # Add both callbacks here
+        resume_from_checkpoint=hparams.ckpt_path,
+        logger=logger,
+        weights_summary=None,
+        progress_bar_refresh_rate=1,
+        gpus=hparams.num_gpus,
+        distributed_backend='ddp' if hparams.num_gpus > 1 else None,
+        num_sanity_val_steps=1,
+        benchmark=True,
+        profiler=None
     )
 
     trainer.fit(system)

@@ -10,7 +10,8 @@ Function dependencies: (-> means function calls)
 @render_rays -> @sample_pdf if there is fine model
 """
 
-def sample_pdf(bins, weights, N_importance, det=False, eps=1e-5):
+# 為細緻模型（fine model）生成更多的採樣
+def sample_pdf(bins, weights, N_importance, det=False, eps=1e-5): # 從概率分布中採樣
     """
     Sample @N_importance samples from @bins with distribution defined by @weights.
 
@@ -26,7 +27,7 @@ def sample_pdf(bins, weights, N_importance, det=False, eps=1e-5):
     """
     N_rays, N_samples_ = weights.shape
     weights = weights + eps # prevent division by zero (don't do inplace op!)
-    pdf = weights / torch.sum(weights, -1, keepdim=True) # (N_rays, N_samples_)
+    pdf = weights / torch.sum(weights, -1, keepdim=True) # (N_rays, N_samples_) Probability Density Function
     cdf = torch.cumsum(pdf, -1) # (N_rays, N_samples), cumulative distribution function
     cdf = torch.cat([torch.zeros_like(cdf[: ,:1]), cdf], -1)  # (N_rays, N_samples_+1) 
                                                                # padded to 0~1 inclusive
@@ -97,11 +98,11 @@ def render_rays(models,
             xyz_: (N_rays, N_samples_, 3) sampled positions
                   N_samples_ is the number of sampled points in each ray;
                              = N_samples for coarse model
-                             = N_samples+N_importance for fine model
+                             = N_samples + N_importance for fine model
             dir_: (N_rays, 3) ray directions
             dir_embedded: (N_rays, embed_dir_channels) embedded directions
             z_vals: (N_rays, N_samples_) depths of the sampled positions
-            weights_only: do inference on sigma only or not
+            weights_only: do inference on sigma 透明度或密度參數 only or not 
 
         Outputs:
             if weights_only:
