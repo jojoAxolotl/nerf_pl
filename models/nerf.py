@@ -41,28 +41,49 @@ class Embedding(nn.Module):
 class NeRF(nn.Module):
     def __init__(self,
                  D=8, W=256,
-                 in_channels_xyz=63, in_channels_dir=27, 
+                 embed_xyz = 10, embed_dir = 4,
                  skips=[4]):
         """
         D: number of layers for density (sigma) encoder
         W: number of hidden units in each layer
         in_channels_xyz: number of input channels for xyz (3+3*10*2=63 by default)
+        in_channels_xyz: number of input channels for xyz (3+3*15*2=93)
         in_channels_dir: number of input channels for direction (3+3*4*2=27 by default)
         skips: add skip connection in the Dth layer
         """
         super(NeRF, self).__init__()
         self.D = D
         self.W = W
-        self.in_channels_xyz = in_channels_xyz
-        self.in_channels_dir = in_channels_dir
+        print(f'embed_xyz: {embed_xyz}')
+        print(f'embed_dir: {embed_dir}')
+        self.in_channels_xyz = 3+3*embed_xyz*2
+        self.in_channels_dir = 3+3*embed_dir*2
         self.skips = skips
+
+        #          D=8, W=256,
+        #          in_channels_xyz=63, in_channels_dir=27, 
+        #          skips=[4]):
+        # """
+        # D: number of layers for density (sigma) encoder
+        # W: number of hidden units in each layer
+        # in_channels_xyz: number of input channels for xyz (3+3*10*2=63 by default)
+        # in_channels_xyz: number of input channels for xyz (3+3*15*2=93 by default)
+        # in_channels_dir: number of input channels for direction (3+3*4*2=27 by default)
+        # skips: add skip connection in the Dth layer
+        # """
+        # super(NeRF, self).__init__()
+        # self.D = D
+        # self.W = W
+        # self.in_channels_xyz = in_channels_xyz
+        # self.in_channels_dir = in_channels_dir
+        # self.skips = skips
 
         # xyz encoding layers
         for i in range(D):
             if i == 0:
-                layer = nn.Linear(in_channels_xyz, W)
+                layer = nn.Linear(self.in_channels_xyz, W)
             elif i in skips:
-                layer = nn.Linear(W+in_channels_xyz, W)
+                layer = nn.Linear(W+self.in_channels_xyz, W)
             else:
                 layer = nn.Linear(W, W)
             layer = nn.Sequential(layer, nn.ReLU(True))
@@ -71,7 +92,7 @@ class NeRF(nn.Module):
 
         # direction encoding layers
         self.dir_encoding = nn.Sequential(
-                                nn.Linear(W+in_channels_dir, W//2),
+                                nn.Linear(W+self.in_channels_dir, W//2),
                                 nn.ReLU(True))
 
         # output layers
@@ -92,7 +113,7 @@ class NeRF(nn.Module):
                         x is of shape (B, self.in_channels_xyz)
 
         Outputs:
-            if sigma_ony:
+            if sigma_only:
                 sigma: (B, 1) sigma
             else:
                 out: (B, 4), rgb and sigma

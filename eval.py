@@ -25,9 +25,9 @@ def get_opts():
     parser.add_argument('--dataset_name', type=str, default='klevr',
                         choices=['blender', 'llff', 'klevr'],
                         help='which dataset to validate')
-    parser.add_argument('--scene_name', type=str, default='test',
+    parser.add_argument('--scene_name', type=str, default='settingB',
                         help='scene name, used as output folder name')
-    parser.add_argument('--split', type=str, default='test',
+    parser.add_argument('--split', type=str, default='val',
                         help='test or test_train')
     parser.add_argument('--img_wh', nargs="+", type=int, default=[256, 256],
                         help='resolution (img_w, img_h) of the image')
@@ -121,7 +121,8 @@ if __name__ == "__main__":
         results = batched_inference(models, embeddings, rays,
                                     args.N_samples, args.N_importance, args.use_disp,
                                     args.chunk,
-                                    dataset.white_back)
+                                    # dataset.white_back)
+                                    False)
 
         img_pred = results['rgb_fine'].view(h, w, 3).cpu().numpy()
         
@@ -136,8 +137,10 @@ if __name__ == "__main__":
 
         img_pred_ = (img_pred*255).astype(np.uint8)
         imgs += [img_pred_]
-        imageio.imwrite(os.path.join(dir_name, f'{i:03d}.png'), img_pred_)
-
+        img_name = f'{dataset.meta["split_ids"]["val"][i]:05d}.png'
+        # print(img_name)
+        imageio.imwrite(os.path.join(dir_name, img_name), img_pred_)
+        # self.split_ids = self.meta['split_ids'][self.split]
         if 'rgbs' in sample:
             rgbs = sample['rgbs']
             img_gt = rgbs.view(h, w, 3)

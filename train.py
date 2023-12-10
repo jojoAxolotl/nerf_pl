@@ -32,14 +32,16 @@ class NeRFSystem(LightningModule):
 
         self.loss = loss_dict[hparams.loss_type]()
 
-        self.embedding_xyz = Embedding(3, 10) # 10 is the default number
-        self.embedding_dir = Embedding(3, 4) # 4 is the default number
+        embed_xyz = 15 # 10 is the default number
+        embed_dir = 4 # 4 is the default number
+        self.embedding_xyz = Embedding(3, embed_xyz) 
+        self.embedding_dir = Embedding(3, embed_dir) 
         self.embeddings = [self.embedding_xyz, self.embedding_dir]
 
-        self.nerf_coarse = NeRF()
+        self.nerf_coarse = NeRF(embed_xyz = embed_xyz, embed_dir = embed_dir)
         self.models = [self.nerf_coarse]
         if hparams.N_importance > 0:
-            self.nerf_fine = NeRF()
+            self.nerf_fine = NeRF(embed_xyz = embed_xyz, embed_dir = embed_dir)
             self.models += [self.nerf_fine]
 
     def decode_batch(self, batch):
