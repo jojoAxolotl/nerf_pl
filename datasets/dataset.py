@@ -198,7 +198,6 @@ class KlevrDataset(Dataset):
         self.split = split
         self.img_wh = img_wh
         self.white_back = white_back
-
         self.define_transforms()
         self.read_meta()
 
@@ -220,6 +219,7 @@ class KlevrDataset(Dataset):
         self.directions = get_ray_directions(h, w, self.focal)
 
         if self.split == 'train':
+            # self.image_paths = []
             self.poses = []
             self.all_rays_o = []
             self.all_rays_d = []
@@ -230,6 +230,7 @@ class KlevrDataset(Dataset):
             for image_id in self.split_ids:
                 if self.get_rgb:
                     image_path = os.path.join(self.root_dir, f'{image_id:05d}.png')
+                    # self.image_paths += [image_path]
                     img = Image.open(image_path)
                     img = img.resize(self.img_wh, Image.Resampling.LANCZOS)
                     img = self.transform(img) # (4, h, w)
@@ -252,6 +253,7 @@ class KlevrDataset(Dataset):
             
             
             self.near, self.far = calculate_near_and_far(self.all_rays_o, self.all_rays_d)
+            # self.bounds = np.array([self.near, self.far])
             self.all_rays = torch.cat([self.all_rays_o, self.all_rays_d, self.near, self.far],1).float()
 
             if len(self.all_rgbs) > 0:

@@ -32,7 +32,7 @@ class NeRFSystem(LightningModule):
 
         self.loss = loss_dict[hparams.loss_type]()
 
-        embed_xyz = 15 # 10 is the default number
+        embed_xyz = 10 # 10 is the default number
         embed_dir = 4 # 4 is the default number
         self.embedding_xyz = Embedding(3, embed_xyz) 
         self.embedding_dir = Embedding(3, embed_dir) 

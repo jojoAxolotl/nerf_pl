@@ -25,7 +25,7 @@ def get_opts():
     parser.add_argument('--dataset_name', type=str, default='klevr',
                         choices=['blender', 'llff', 'klevr'],
                         help='which dataset to validate')
-    parser.add_argument('--scene_name', type=str, default='settingB',
+    parser.add_argument('--scene_name', type=str, default='settingC',
                         help='scene name, used as output folder name')
     parser.add_argument('--split', type=str, default='val',
                         help='test or test_train')
@@ -44,10 +44,10 @@ def get_opts():
                         help='chunk size to split the input to avoid OOM')
 
     parser.add_argument('--ckpt_path', type=str, required=True,
-                        default='ckpts/exp/epoch=12.ckpt',
+                        default='ckpts/settingC/epoch=10.ckpt',
                         help='pretrained checkpoint path to load')
 
-    parser.add_argument('--save_depth', default=False, action="store_true",
+    parser.add_argument('--save_depth', default=True, action="store_true",
                         help='whether to save depth prediction')
     parser.add_argument('--depth_format', type=str, default='pfm',
                         choices=['pfm', 'bytes'],
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         kwargs['spheric_poses'] = args.spheric_poses
     dataset = dataset_dict[args.dataset_name](**kwargs)
 
-    embedding_xyz = Embedding(3, 10)
+    embedding_xyz = Embedding(3, 7)
     embedding_dir = Embedding(3, 4)
     nerf_coarse = NeRF()
     nerf_fine = NeRF()

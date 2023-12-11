@@ -41,7 +41,7 @@ class Embedding(nn.Module):
 class NeRF(nn.Module):
     def __init__(self,
                  D=8, W=256,
-                 embed_xyz = 10, embed_dir = 4,
+                 embed_xyz = 7, embed_dir = 4,
                  skips=[4]):
         """
         D: number of layers for density (sigma) encoder
@@ -59,24 +59,6 @@ class NeRF(nn.Module):
         self.in_channels_xyz = 3+3*embed_xyz*2
         self.in_channels_dir = 3+3*embed_dir*2
         self.skips = skips
-
-        #          D=8, W=256,
-        #          in_channels_xyz=63, in_channels_dir=27, 
-        #          skips=[4]):
-        # """
-        # D: number of layers for density (sigma) encoder
-        # W: number of hidden units in each layer
-        # in_channels_xyz: number of input channels for xyz (3+3*10*2=63 by default)
-        # in_channels_xyz: number of input channels for xyz (3+3*15*2=93 by default)
-        # in_channels_dir: number of input channels for direction (3+3*4*2=27 by default)
-        # skips: add skip connection in the Dth layer
-        # """
-        # super(NeRF, self).__init__()
-        # self.D = D
-        # self.W = W
-        # self.in_channels_xyz = in_channels_xyz
-        # self.in_channels_dir = in_channels_dir
-        # self.skips = skips
 
         # xyz encoding layers
         for i in range(D):
