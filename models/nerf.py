@@ -41,7 +41,7 @@ class Embedding(nn.Module):
 class NeRF(nn.Module):
     def __init__(self,
                  D=8, W=256,
-                 embed_xyz = 15, embed_dir = 4,
+                 embed_xyz = 7, embed_dir = 4,
                  skips=[4]):
         """
         D: number of layers for density (sigma) encoder

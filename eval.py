@@ -25,7 +25,7 @@ def get_opts():
     parser.add_argument('--dataset_name', type=str, default='klevr',
                         choices=['blender', 'llff', 'klevr'],
                         help='which dataset to validate')
-    parser.add_argument('--scene_name', type=str, default='settingC',
+    parser.add_argument('--scene_name', type=str, default='settingC11',
                         help='scene name, used as output folder name')
     parser.add_argument('--split', type=str, default='val',
                         help='test or test_train')
